@@ -67,30 +67,7 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// generate short url, check shortUrl not exist
-	for {
-		shortUrl = Hash(request.Url)
-		stmt := "SELECT * FROM urls WHERE shortUrl = ?"
-		sqlStmt, err := database.UrlsDB.Prepare(stmt)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer sqlStmt.Close()
-
-		q, err := sqlStmt.Query(shortUrl)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if q.Next() {
-			continue
-		} else {
-			break
-		}
-
-	}
+	shortUrl = Hash(request.Url) // TODO: check hash is unique
 
 	// insert short url to db
 	stmt = `INSERT INTO urls(originUrl, shortUrl, expireAt, times)
