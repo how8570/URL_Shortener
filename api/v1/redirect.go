@@ -12,7 +12,7 @@ func HandleRedirect(w http.ResponseWriter, r *http.Request) {
 	url := vars["url"]
 
 	fmt.Println("Redirecting to: ", url)
-	
 
-	http.Redirect(w, r, "https://"+url, http.StatusFound)
+	// http.Redirect(w, r, "https://"+url, http.StatusFound)
+	http.Redirect(w, r, "https://"+"www.google.com/", http.StatusFound)
 }
