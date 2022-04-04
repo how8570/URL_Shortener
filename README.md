@@ -15,6 +15,11 @@ just simply run the code
   
 ##  Others / DevLog
 
+### 4/5/2022
+
+- （凌晨）後來補了一個 Method ，現在可以測試 db 了。但使用的是同一組 db ，沒有測試用的 db。
+  這算是我第一次比較認真的在寫 test，因此也了踩到了一些因為先寫功能才做 test 導致難以規劃的坑。
+
 ### 4/4/2022
 
 - 今天來補寫 unit test 跟一些 API 的輸入防呆
