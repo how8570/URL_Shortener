@@ -4,7 +4,7 @@
 
 just simply run the code
   ```bash
-  go run main.go
+  go run ./main.go
   ```
 
 ## Known Issues

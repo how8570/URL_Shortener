@@ -119,7 +119,7 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortUrl = Hash(request.Url) // TODO: check hash is unique
+	shortUrl = Hash() // TODO: consider to check hash is unique
 
 	// insert short url to db
 	stmt = `INSERT INTO urls(originUrl, shortUrl, expireAt, times)
