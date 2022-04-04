@@ -14,7 +14,7 @@ func HandleRedirect(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	url := vars["url"]
 	
-	stmt := "SELECT originUrl, expireAt FROM urls WHERE shortUrl = ?"
+	stmt := "SELECT originUrl, expireAt FROM urls WHERE shortUrl = ?;"
 
 	sqlStmt, err := database.UrlsDB.Prepare(stmt)
 	if err != nil {

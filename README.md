@@ -2,15 +2,17 @@
 
 ## Run code
 
-just simple run the code
+just simply run the code
   ```bash
   go run main.go
   ```
 
 ## Known Issues
-  - hash may collision, if you have a lot of short links. If it happens, it will cause crash because db write lock.
-  
+  - Hash may collision, if you have a lot of short links. If it happens, it will **cause crash because db write lock**.
 
+  - if two client send same url at the same time, **not sure what will happen**.
+
+  
 ##  Others / DevLog
 
 ### 4/4/2022

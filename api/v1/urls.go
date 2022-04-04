@@ -79,11 +79,36 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer q.Close()
 
+	var extend bool
+	var expireAt int64
 	if q.Next() {
-		var expireAt int64
 		q.Scan(&shortUrl, &expireAt)
+		extend = true
+	}
+	q.Close()
+
+	if extend {
+		if expireAt <= toUnixTime(request.ExpireAt) {
+			stmt = "UPDATE urls SET expireAt = ? WHERE shortUrl = ? ;"
+			sqlStmt, err = database.UrlsDB.Prepare(stmt)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer sqlStmt.Close()
+			res, err := sqlStmt.Exec(toUnixTime(request.ExpireAt), shortUrl)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			rows, err := res.RowsAffected()
+			if err != nil {
+				log.Fatal(err)
+			}
+			if rows != 1 {
+				log.Fatalf("expected to affect 1 row, affected %d", rows)
+			}
+		}
 
 		response.Id = shortUrl
 		response.ShortUrl = "http://localhost/v1/redirect/" + shortUrl
@@ -98,7 +123,7 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 
 	// insert short url to db
 	stmt = `INSERT INTO urls(originUrl, shortUrl, expireAt, times)
-			VALUES(?, ?, ?, ?)`
+			VALUES(?, ?, ?, ?);`
 	sqlStmt, err = database.UrlsDB.Prepare(stmt)
 	if err != nil {
 		log.Fatal(err)
