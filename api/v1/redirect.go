@@ -13,7 +13,7 @@ func HandleRedirect(w http.ResponseWriter, r *http.Request) {
 	log.Printf("RemoteAddr: %s request url: %s", r.RemoteAddr, r.URL)
 	vars := mux.Vars(r)
 	url := vars["url"]
-	
+
 	stmt := "SELECT originUrl, expireAt FROM urls WHERE shortUrl = ?;"
 
 	sqlStmt, err := database.UrlsDB.Prepare(stmt)

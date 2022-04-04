@@ -17,6 +17,13 @@ func ConnectDB() {
 	}
 }
 
+func ConnectDBWithPath(path string) {
+	UrlsDB, err = sql.Open("sqlite3", path)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func CloseDB() {
 	UrlsDB.Close()
 }
