@@ -21,3 +21,7 @@
 
 # ...even if they are in subdirectories
 !*/
+
+# this is test db for demo purposes only, remove it from 
+# .gitignore before use
+!urls.db

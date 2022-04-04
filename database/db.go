@@ -1,6 +1,11 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"log"
+
+	_ "github.com/mattn/go-sqlite3"
+)
 
 var UrlsDB *sql.DB
 var err error
@@ -8,7 +13,7 @@ var err error
 func ConnectDB() {
 	UrlsDB, err = sql.Open("sqlite3", "./database/urls.db")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 

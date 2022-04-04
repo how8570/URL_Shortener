@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/how8570/URL_Shortener/database"
 )
@@ -19,6 +23,7 @@ type Response struct {
 }
 
 func HandleUrls(w http.ResponseWriter, r *http.Request) {
+	log.Printf("RemoteAddr: %s Request url: %s Method: %s", r.RemoteAddr, r.URL, r.Method)
 	if r.Method != "POST" {
 		http.NotFound(w, r)
 		return
@@ -37,14 +42,34 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: check URL, ExpireDate correct format
-	if request.Url == "" || request.ExpireAt == "" {
-		http.Error(w, "url or expireAt is empty", http.StatusBadRequest)
+	// trim URL, ExpireDate to correct format
+	request.Url = strings.TrimSpace(request.Url)
+	request.ExpireAt = strings.TrimSpace(request.ExpireAt)
+	u, _ := url.Parse(request.Url)
+	request.Url = u.Host + u.Path
+	if u.RawQuery != "" {
+		request.Url += "?" + u.RawQuery
+	}
+	if u.Fragment != "" {
+		request.Url += "#" + u.Fragment
+	}
+
+	if request.Url == "" {
+		http.Error(w, "url is empty", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("RemoteAddr: %s | Json decode value{request url: %s , expireAt: %s}", r.RemoteAddr, request.Url, request.ExpireAt)
+
+	// check db exist
+	if database.UrlsDB == nil {
+		log.Println("database is NOT connected, please run `go run main.go`")
+		http.Error(w, "database is NOT connected", http.StatusInternalServerError)
 		return
 	}
 
 	// check is url is exis
-	stmt := "SELECT shortUrl FROM urls WHERE originUrl = ?"
+	stmt := "SELECT shortUrl, expireAt FROM urls WHERE originUrl = ?"
 	sqlStmt, err := database.UrlsDB.Prepare(stmt)
 	if err != nil {
 		log.Fatal(err)
@@ -54,9 +79,11 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer q.Close()
 
 	if q.Next() {
-		q.Scan(&shortUrl)
+		var expireAt int64
+		q.Scan(&shortUrl, &expireAt)
 
 		response.Id = shortUrl
 		response.ShortUrl = "http://localhost/v1/redirect/" + shortUrl
@@ -78,18 +105,17 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 	}
 	defer sqlStmt.Close()
 
-	res, err := sqlStmt.Exec(request.Url, shortUrl, request.ExpireAt, 0)
-
+	res, err := sqlStmt.Exec(request.Url, shortUrl, toUnixTime(request.ExpireAt), 0)
 	if err != nil {
 		log.Fatal(err)
-	} else {
-		rows, err := res.RowsAffected()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if rows != 1 {
-			log.Fatalf("expected to affect 1 row, affected %d", rows)
-		}
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if rows != 1 {
+		log.Fatalf("expected to affect 1 row, affected %d", rows)
 	}
 
 	response.Id = shortUrl
@@ -98,4 +124,31 @@ func HandleUrls(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+func toUnixTime(expireAt string) int64 {
+	if expireAt == "" {
+		return time.Now().AddDate(0, 0, 7).Unix()
+	}
+
+	var t time.Time
+	var err error
+
+	const format string = "2006-01-02T15:04:05Z"
+	t, err = time.Parse(format, expireAt)
+	if err == nil {
+		return t.Unix()
+	}
+
+	t, err = time.Parse("2006-01-02", expireAt)
+	if err == nil {
+		return t.Unix()
+	}
+
+	unixTimestmp, err := strconv.ParseInt(expireAt, 10, 64)
+	if err == nil && unixTimestmp >= 0 && unixTimestmp <= 2147483647 {
+		return time.Unix(unixTimestmp, 0).Unix()
+	}
+
+	return time.Now().AddDate(0, 0, 7).Unix()
 }
